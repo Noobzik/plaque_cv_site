@@ -8,4 +8,5 @@ app_name = "main"
 urlpatterns = [
     path("", views.vehicules, name="vehicules"),
     path("camera/", views.webcam, name='webcam1'),
+    path("feed/", views.feed, name='webcam1')
 ]
