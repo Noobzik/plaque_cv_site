@@ -1,0 +1,19 @@
+#banner {
+  background: url("entrepot.jpg") top center;
+  background-size: cover;
+  position: relative;
+  color:#fff;
+  margin-bottom:0;
+}
+
+section{
+	font-size: 28px;
+}
+
+#presentation{
+	text-shadow:
+	-1px -1px 0 #000,
+	1px -1px 0 #000,
+	-1px 1px 0 #000,
+	1px 1px 0 #000;
+}
