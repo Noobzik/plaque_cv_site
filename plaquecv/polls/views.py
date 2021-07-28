@@ -5,6 +5,9 @@ from django.shortcuts import render
 from .models import Vehicule
 import cv2
 import threading
+import socket
+import struct
+import numpy as np
 from django.views.decorators import gzip
 from django.http import StreamingHttpResponse
 
@@ -12,6 +15,7 @@ from django.http import StreamingHttpResponse
 def vehicules(request):
     vehicules = Vehicule.objects.all()
     return render(request=request, template_name="main/liste.html", context={'vehicules': vehicules})
+
 
 @gzip.gzip_page
 def webcam(request):
@@ -21,6 +25,7 @@ def webcam(request):
     except:
         pass
     return render(request, 'vebcam.html')
+
 
 #capture video
 class VideoCamera(object):
@@ -41,7 +46,40 @@ class VideoCamera(object):
         while True:
             (self.grabbed, self.frame) = self.video.read()
 
+
 def gen(camera):
     while True:
         frame = camera.get_frame()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+
+def feed(request):
+    try:
+        return StreamingHttpResponse(feed_gen(), content_type="multipart/x-mixed-replace;boundary=frame")
+    except:
+        pass
+    return render(request, 'vebcam.html')
+
+
+def feed_gen():
+    MAX_DGRAM = 2 ** 16
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    addr = '0.0.0.0'
+    port = 55055
+    s.bind((addr, port))
+    dat = b''
+    while True:
+        seg, addr = s.recvfrom(MAX_DGRAM)
+        if struct.unpack("B", seg[0:1])[0] > 1:
+            dat += seg[1:]
+            print("No Data received")
+        else:
+            dat += seg[1:]
+            feed = cv2.imdecode(np.frombuffer(dat, dtype=np.uint8), 1)
+            _, img = cv2.imencode('.jpg', feed)
+            img1 = img.tobytes()
+            cv2.waitKey(1)
+            yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + img1 + b'\r\n\r\n')
+            dat = b''
+            #    frame = camera.get_frame()
+    s.close()
